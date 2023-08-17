@@ -27,7 +27,3 @@ _testmain.go
 *.prof
 *.iml
 .idea
-.DS_Store
-
-# Code coverage
-coverage.txt
