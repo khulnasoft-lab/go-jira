@@ -3,71 +3,41 @@ name: Tests
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
-  workflow_dispatch:
-  schedule:
-    - cron: "5 1 * * *"
 
 jobs:
-  unit-test:
-    name: Unit tests
+  test:
+    name: Test and lint
     strategy:
-      fail-fast: false
       matrix:
-        go: [ '1.19', '1.18' ]
-        os: [ 'windows-latest', 'ubuntu-latest', 'macOS-latest' ]
-    runs-on: ${{ matrix.os }}
+        go-version: [1.19.x]
+        platform: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go }}
+          go-version: ${{ matrix.go-version }}
 
-      - name: Run Unit tests (Go ${{ matrix.go }})
-        run: make test
-
-  fmt:
-    name: go fmt
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      # Caching go modules to speed up the run
+      - uses: actions/cache@v2
         with:
-          go-version: 1.19
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Run go fmt (Go ${{ matrix.go }})
+      - name: Run go fmt
         if: runner.os != 'Windows'
         run: diff -u <(echo -n) <(gofmt -d -s .)
-
-  vet:
-    name: go vet
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: 1.19
 
       - name: Run go vet
         run: make vet
 
-  staticcheck:
-    name: staticcheck
-    runs-on: ubuntu-latest
+      - name: Run staticcheck
+        run: make staticcheck
 
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: 1.19
-
-      - name: Run staticcheck (Go ${{ matrix.go }})
-        uses: dominikh/staticcheck-action@v1.3.0
-        with:
-          version: "2022.1"
-          install-go: false
-          cache-key: staticcheck-cache
+      - name: Run Unit tests.
+        run: make test
