@@ -1,4 +1,4 @@
-module github.com/khulnasoft-lab/go-jira/v2
+module github.com/khulnasoft-lab/go-jira
 
 go 1.18
 
